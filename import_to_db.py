@@ -5,7 +5,11 @@ import os
 
 # .env laden
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path, encoding='utf-8')
+load_dotenv(dotenv_path, encoding='utf-8') 
+# Throw an error if .env file is not found
+if not os.path.exists(dotenv_path):
+    raise FileNotFoundError(f".env file not found at {dotenv_path}")
+
 
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
@@ -33,9 +37,9 @@ cursor.execute("DROP TABLE IF EXISTS kunden")
 # Tabelle mit E-Mail als UNIQUE-Schlüssel
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS kunden (
-    name TEXT,
-    email TEXT UNIQUE,
-    alter INT
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL PRIMARY KEY,
+    alter INT NOT NULL
 )
 """)
 
