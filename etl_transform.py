@@ -27,3 +27,4 @@ df_cleaned = df.dropna(subset=["email", "alter"])
 df_cleaned.to_csv("data/kunden_bereinigt.csv", index=False)
 
 print(df_cleaned)
+
