@@ -4,8 +4,8 @@
 
 1. `docker-compose up -d` starten
 2. `.env` Datei anpassen
-3. `etl_transform.py` ausführen
-4. `import_to_db.py` ausführen
+3. `init_db-docker.py` ausführen
+4. ` ` ausführen
 
 ## 🐘 PostgreSQL Zugang
 
@@ -17,7 +17,9 @@
 
 ## 📁 Datenstruktur
 
-- `data/kunden.csv`: Rohdaten
+- sql/business_db.sql : Datenbank initialisieren (Tabellen anlegen)
+- 
+`data/kunden.csv`: Rohdaten
 - `data/kunden_bereinigt.csv`: bereinigte Daten
 
 ## ✅ Ziele
