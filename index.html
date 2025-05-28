@@ -38,8 +38,11 @@ Datum: 24.05.2025
         </ul>
         <li><a href="#data-warehouse"> Data-Warehouse</a></li>
         <ul>
+          <li><a href="#log"> Logisches Schema </a></li>
           <li><a href="#mer"> mER-Diagram </a></li>
           <li><a href="#mapping"> Mapping </a></li>
+          <li><a href="#scd"> SCD </a></li>
+          <li><a href="#etl"> ETL </a></li>
           <li><a href="#prozessbeschreibungen"> Prozessbeschreibungen</a></li>
         </ul>
         <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>
@@ -76,7 +79,7 @@ Datum: 24.05.2025
       <ul>
         <li>Wie entwickeln sich Umsätze über Zeit und Region?</li>
         <li>Wie beeinflussen Preisänderungen das Kaufverhalten?</li>
-        <li>Wie ändern sich Stammdaten (Artikelpreis, Lagerbestand) über die Zeit (SCD)?</li>
+        <li>Wie ändern sich Stammdaten (Artikelpreis) über die Zeit (SCD)?</li>
         <li>Welche Lieferanten liefern umsatzstarke Produkte?</li>
         <li>Wie verteilen sich Lieferanten geografisch?</li>
         <li>Wer liefert wie viele Artikel?</li>
@@ -393,7 +396,8 @@ Datum: 24.05.2025
       • Anzahl Wiederholungen: 0
       • Definiertheit: 100 %
       • Identifizierend: nein</p>
-    <p>🔹 <strong>Preis: <small> entspricht dem Verkaufspreis zum Zeitpunkt des Kaufs (nicht aktueller Artikelpreis).</small></strong>
+    <p>🔹 <strong>Preis: <small> entspricht dem Verkaufspreis zum Zeitpunkt des Kaufs (nicht aktueller
+          Artikelpreis).</small></strong>
       • Typ: <code>DEC</code>
       • Länge: 9 Byte
       • Anzahl Wiederholungen: 0
@@ -412,7 +416,7 @@ Datum: 24.05.2025
       • Definiertheit: 100 %
       • Identifizierend: nein</p>
     <hr>
-    
+
 
     <h4>Warum ist der Wertebereicht größer als notwendig?</h4>
     <br />
@@ -435,7 +439,9 @@ Datum: 24.05.2025
       <p>
         <a target="_blank"
           href="https://1drv.ms/x/c/41283fdb6be8dd2a/EeN-VEJ4ZspHlsuvDrq7cwcBUrnHKskTxzSENjyT1SfzrA?e=lBbzpP">Link zur
-          Speicherberechnung</a>
+          Speicherberechnung-Excel</a> <br /><br />
+
+        <a href="docs/Speicherberechnung-final.pdf" target="_blank">Speicherberechnung-PDF</a>
       </p>
 
       <p><a target="_blank"
@@ -446,17 +452,64 @@ Datum: 24.05.2025
 
     <section>
       <h2 id="tabellen"> Erstellung Tabellen</h2>
+      <p> <a href="sql/business_db.sql" target="_blank">Postgres SQL Befehle</a></p>
     </section>
     <section>
       <h2 id="diagram"> DB-Diagramm aus Postgresql</h2>
       <img src="docs/Postgres-ERD.png" alt="Beschreibung des Bildes" style="max-width: 100%; height: auto;">
-
-
-
     </section>
+    <h1 id="data-warehouse"> Data-Warehouse</h1>
+    <h2 id="log"> Logisches Schema </h2>
+    <p>Das logische Schema des Data Warehouses basiert auf dem Star Schema und umfasst die folgenden Dimensionen und
+      Fakten:</p>
+      <div style="max-width: 100%; overflow-x: auto;">
+      <img src="docs/Star-Schema.png" alt="mER-Diagram" style="max-width: 100%; height: auto;">
+    </div>
+
+    <h2 id="mer"> mER-Diagram </h2>
+    <div style="max-width: 100%; overflow-x: auto;">
+      <img src="docs/MER-Diagramm.png" alt="mER-Diagram" style="max-width: 100%; height: auto;">
+    </div>
     <section>
       <h2 id="mapping"> Mapping</h2>
     </section>
+    <section>
+      <h2 id="scd"> Slowly Changing Dimensions (SCD)</h2>
+      <p>In diesem Abschnitt werden die Slowly Changing Dimensions (SCD) behandelt, die für die Historisierung von
+        Stammdaten in Data Warehouses wichtig sind.</p>
+      <p>Die SCD-Typen 0 und 2 werden verwendet, um Änderungen an Stammdaten zu verfolgen und historische Daten zu
+        bewahren.</p>
+      <p> <strong>SCD 0:</strong> Überschreibt den aktuellen Wert ohne Historie zu speichern. Die Zeitdimension ändert
+        sich nicht und kann bei Tippfehlern überschrieben werden.<br />
+        <strong>SCD 2:</strong> Speichert den aktuellen und den vorherigen Wert, um die Historie zu bewahren. Das wird
+        für die Auswertungen gebraucht. Es werden zusätzliche Spalten "valid_from" und "valid_to" der SCD2 Tabellen hinzugefügt.</p>
+
+
+      <p>Die SCD-Typen werden in der Datenbank wie folgt umgesetzt: Aus Zeitgründen konnte das nicht mehr umgesetzt
+        werden.</p>
+      </p>
+    </section>
+    <h2 id="etl">ETL-Prozess</h2>
+    <p>Der ETL-Prozess (Extract, Transform, Load) beschreibt die Schritte zur Datenintegration in das Data Warehouse.
+    </p>
+    <p>Der ETL-Prozess umfasst die folgenden Schritte:</p>
+    <ul>
+      <li><strong>Extract:</strong> Daten aus der operativen Business-Datenbank extrahieren.</li>
+      <li><strong>Transform:</strong> Daten bereinigen, anreichern und in das Star Schema transformieren.</li>
+      <li><strong>Load:</strong> Transformierte Daten in das Data Warehouse laden.</li>
+    </ul>
+    <p>Der ETL-Prozess wird in Python implementiert. <strong>Nicht Bestandteil des Projektes:</strong> Orchestrierung
+      mit Tools wie Apache Airflow oder Luigi! </p>
+    <p>Die ETL-Pipeline besteht aus den folgenden Komponenten:</p>
+    <ul>
+      <li><strong>Extract:</strong> Extraktion der Daten aus der Business-Datenbank.</li>
+      <li><strong>Transform:</strong> Transformation der Daten in das Star Schema.</li>
+      <li><strong>Load:</strong> Laden der transformierten Daten in das Data Warehouse. (Kein Bestandteil des Projektes)
+      </li>
+    </ul>
+
+
+
 
 
 
@@ -532,6 +585,8 @@ Datum: 24.05.2025
         <h3 id="lessons"> Lessons Learned / Herausforderungen</h3>
         <p>Was ich sagen wollte...</p>
         <ul>
+          <li>Es ist gut sich lange mit dem Konzept aufzuhalten und es genau zu durchdenken, dann ist es hinterher
+            einfacher die Modelle umzusetzen.</li>
           <li>Sobald Ihr einen Strich macht, fangt die Doku an. Hinterher alles nachzudokumentieren macht kein Spaß und
             ist aufwändiger als gleich mitzuschreiben.</li>
 
@@ -574,7 +629,7 @@ Datum: 24.05.2025
           <li>Verzeichnisstruktur (siehe oben)</li>
           <li>Datenmodell: ER-Diagramm + Star Schema</li>
           <li>ETL-Pipeline: Beschreibung + Code-Übersicht</li>
-          <li>CDC / SCD-Umsetzung</li>
+          <li>SCD-Umsetzung</li>
           <li>Docker Setup & Deployment</li>
           <li>Lessons Learned / Herausforderungen</li>
           <li>Referenzen, Links, Lizenz</li>

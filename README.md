@@ -17,8 +17,13 @@
 
 ## 📁 Datenstruktur
 
-- sql/business_db.sql : Datenbank initialisieren (Tabellen anlegen)
-- 
+- `init_db-docker.py`: Business-Datenbank initialisieren (Tabellen anlegen) 
+-  in pgAdmin die Datenbank: `etl_db_star` anlegen
+- `init_db-docker-star-schema.py`: DWH Datenbank initialisieren (Tabellen anlegen) 
+-  den Inhalt von demo_data.sql in der SQL Query eingeben und ausführen
+- ETL Prozess: xy.py ausführen (Daten werden von der etl_db in die etl_db_star verschoben)
+
+
 `data/kunden.csv`: Rohdaten
 - `data/kunden_bereinigt.csv`: bereinigte Daten
 
