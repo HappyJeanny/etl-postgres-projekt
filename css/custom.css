@@ -1,0 +1,24 @@
+nav > ul.toc-list {
+  all: unset;
+  display: block !important;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+nav > ul.toc-list li {
+  all: unset;
+  display: list-item !important;
+  margin-bottom: 0.5em;
+}
+
+nav ul,
+nav ul ul,
+nav ul ul ul {
+  display: block !important;
+  flex-direction: unset !important;
+  gap: unset !important;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+nav ul li {
+  display: list-item !important;
+}

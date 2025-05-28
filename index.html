@@ -1,0 +1,588 @@
+<!--
+Projekt: Data Warehouse Projektarbeit
+Beschreibung: GitHub-Projekt im Bereich Data Engineering
+Autor: Isabell Mader
+Datum: 24.05.2025
+-->
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.cyan.min.css">
+  <link rel="stylesheet" href="css/custom.css">
+  <title>Data Engineering Abschlussprojekt</title>
+</head>
+
+<body>
+  <main class="container">
+    <!-- Inhaltsverzeichnis -->
+    <h2>Inhaltsverzeichnis</h2>
+    <nav>
+
+      <ul class="toc-list">
+        <li><a href="#projektbeschreibung-dwh-fur-ein-handelsunternehmen"> Projektbeschreibung: DWH für ein
+            Handelsunternehmen</a></li>
+        <li><a href="#business-datenbank"> Business-Datenbank</a></li>
+        <ul class="toc-list">
+          <li><a href="#er-modell"> ER-Modell</a></li>
+          <li><a href="#relationenmodell"> Relationenmodell</a></li>
+          <li><a href="#prufen-auf-die-normalformen"> Prüfen auf die Normalformen</a></li>
+          <li><a href="#objektbeschreibung"> Objektbeschreibung</a></li>
+          <li><a href="#speicher-berechnen"> Speicherberechnung</a></li>
+          <li><a href="#tabellen"> Erstellung Tabellen</a></li>
+          <li><a href="#diagram"> DB-Diagramm aus Postgresql</a></li>
+        </ul>
+        <li><a href="#data-warehouse"> Data-Warehouse</a></li>
+        <ul>
+          <li><a href="#mer"> mER-Diagram </a></li>
+          <li><a href="#mapping"> Mapping </a></li>
+          <li><a href="#prozessbeschreibungen"> Prozessbeschreibungen</a></li>
+        </ul>
+        <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>
+        <li><a href="#projektstruktur-3-tier-architektur"> Projektstruktur (3-Tier Architektur)</a></li>
+        <li><a href="#readmemd"> README.md</a></li>
+
+
+
+      </ul>
+    </nav>
+    <br /><br />
+
+    <h2 id="projektbeschreibung-dwh-fur-ein-handelsunternehmen">📝 Projektbeschreibung: DWH für ein Handelsunternehmen
+    </h2>
+    <p>
+      Ein Handelsunternehmen mit 100 Filialen in 5 Bundesländern vertreibt rund 10.000 Produkte in 10 Produktkategorien.
+      Jede Filiale erfasst Verkäufe elektronisch über Kassensysteme. Ziel dieses Projekts ist es, ein skalierbares Data
+      Warehouse
+      zu erstellen, das die Daten aus der operativen Business-Datenbank konsolidiert, historisiert und für analytische
+      Zwecke
+      aufbereitet.
+    </p>
+    <p>
+      Der Fokus liegt auf:
+      <ul>
+        <li>dem Design einer Business-DB mit normierter Struktur,</li>
+        <li>dem Aufbau eines analytischen DWH im Star Schema,</li>
+        <li>der Implementierung eines ETL-Prozesses (inkl. CDC),</li>
+        <li>und der Abbildung historischer Änderungen mittels SCD2.</li>
+      </ul>
+    </p>
+    <p>
+      Typische Fragestellungen:
+      <ul>
+        <li>Wie entwickeln sich Umsätze über Zeit und Region?</li>
+        <li>Wie beeinflussen Preisänderungen das Kaufverhalten?</li>
+        <li>Wie ändern sich Stammdaten (Artikelpreis, Lagerbestand) über die Zeit (SCD)?</li>
+        <li>Welche Lieferanten liefern umsatzstarke Produkte?</li>
+        <li>Wie verteilen sich Lieferanten geografisch?</li>
+        <li>Wer liefert wie viele Artikel?</li>
+      </ul>
+
+      <a href="#prozessbeschreibungen">Siehe auch: Prozessbeschreibungen</a>
+    </p>
+
+    <br /><br /><br />
+
+
+    <section>
+      <h1 id="business-datenbank"> Business-Datenbank</h1>
+      <h2 id="er-modell"> ER-Modell</h2>
+
+      <div style="max-width: 100%; overflow-x: auto;">
+        <img src="docs/er-modell.svg" alt="ER-Modell" style="max-width: 100%; height: auto;">
+      </div>
+
+
+
+    </section>
+
+    <section>
+      <h2 id="relationenmodell"> Relationenmodell</h2>
+      <h3> Entitäten identifizieren</h3>
+      <ul>
+        <li>Bundesland</li>
+        <li>Filiale</li>
+        <li>Kasse</li>
+        <li>Artikel</li>
+        <li>Kategorie</li>
+        <li>Lieferant</li>
+        <li>Verkauf (Beziehung)</li>
+      </ul>
+      <h3>Attribute identifizieren</h3>
+      <p>Jede Entität hat ihre eigenen Attribute, die für die Identifikation und Beschreibung der Entität notwendig
+        sind.
+        Diese Attribute werden in den Relationen definiert.</p>
+
+      <ul>
+        <li>Bundesland {[<u>ID-Bundesland: INT</u>, Bundesland: VARCHAR(50)]} </li>
+        <li>Filiale {[<u>ID-Filiale: INT</u>, Filiale: VARCHAR(50)]}</li>
+
+        <li>Kasse {[<u>ID-Kasse: INT</u>, Kassennr: INT ]}</li>
+        <li>Artikel {[<u>ID-Artikel: INT</u>, Bezeichnung: VARCHAR(50), Preis: DECIMAL(10,2)]}</li>
+        <li>Kategorie {[<u>ID-Kategorie: INT</u>, Kategorie: VARCHAR(50)]}</li>
+        <li>Lieferant {[<u>ID-Lieferant: INT</u>, Lieferantenname: VARCHAR(50), Strasse: VARCHAR(100), PLZ: VARCHAR(10),
+          Stadt: VARCHAR(50)]}</li>
+
+      </ul>
+      <h3>Beziehungen</h3>
+      <ul>
+        <li>liegt_in {[<u>ID-Filiale: INT</u>, ID-Bundesland: INT]} </li>
+        <li>besitzt {[<u>ID-Kasse: INT</u>, ID-Filiale: INT]}</li>
+        <li>verkauft {[<u>ID-Kasse: INT</u>, <u>ID-Artikel: INT</u>, Menge: INT, Preis: DECIMAL(10,2), Datum: datetime]}
+        </li>
+        <li>liefert {[<u>ID-Artikel: INT</u>, ID-Lieferant: INT]}</li>
+        <li>gehört {[<u>ID-Artikel: INT</u>, ID-Kategorie: INT]} </li>
+        </li>
+      </ul>
+
+
+      <p>Die Entitäten sind wie folgt miteinander verbunden:</p>
+      <ul>
+        <li>Ein Bundesland hat viele Filialen, jede Filiale gehört zu genau einem Bundesland.</li>
+        <li>Eine Filiale hat viele Kassen, jede Kasse gehört zu genau einer Filiale.</li>
+        <li>Eine Kategorie hat viele Artikel, jeder Artikel gehört zu genau einer Kategorie.</li>
+        <li>Ein Lieferant liefert viele Artikel, jeder Artikel wird nur von einem Lieferanten bezogen.</li>
+        <li>Eine Kasse kann viele Verkäufe tätigen, jeder Verkauf wird an einer Kasse erfasst.</li>
+        <li>Ein Artikel kann viele Verkäufe generieren, jeder Verkauf bezieht sich auf genau einen Artikel.</li>
+      </ul>
+      <h3>Relationen</h3>
+      <ul>
+        <li>ID-Bundesland INT (PK) <br>
+          Bundesland VARCHAR(50)</li>
+        <li>ID-Filiale INT (PK) <br>
+          Filiale VARCHAR(50) <br>
+          ID_Bundesland INT (FK)</li>
+        <li>ID-Kasse INT (PK) <br>
+          Kassennr INT <br>
+          ID_Filiale INT (FK)</li>
+        <li>ID-Artikel INT (PK) <br>
+          Bezeichnung VARCHAR(50) <br>
+          Preis DECIMAL(10,2) <br>
+          ID_Lieferant INT (FK) <br>
+          ID_Kategorie INT (FK)</li>
+        <li>ID-Kategorie INT (PK) <br>
+          Kategorie VARCHAR(50)</li>
+        <li>ID-Lieferant INT (PK) <br>
+          Lieferantenname VARCHAR(50) <br>
+          Strasse VARCHAR(100) <br>
+          PLZ VARCHAR(10) <br>
+          Stadt VARCHAR(50)</li>
+        <li>ID-verkauft INT (PK) <br>
+          ID_Kasse INT (FK) <br>
+          ID_Artikel INT (FK) <br>
+          Menge INT <br>
+          Preis DECIMAL(10,2) <br>
+          Datum_UTC DATETIME <br>
+          Datum_local DATETIME
+        </li>
+
+        </li>
+      </ul>
+
+
+      </p>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+    <section>
+      <h2 id="prufen-auf-die-normalformen"> Prüfen auf die Normalformen</h2>
+
+      <h4>Vorgehen: </h4>
+      <p>Die Datenbank wurde auf die 3. Normalform (3NF) überprüft. Dabei wurden folgende Punkte berücksichtigt:
+      </p>
+      <p>In der Tabelle <strong>filiale </strong> war zusätzlich noch <strong>id_bundesland und bundesland_name</strong>
+        enthalten <strong>(transitive Abhängigkeit (Redundanz)</strong>)
+        <br />
+        <strong>Lösung: </strong> <br />Aufteilung der Tabelle filiale in die Tabellen filiale und bundesland.
+        <br />
+        <h4>Nochmalige Überprüfung</h4>
+        <ul>
+          <li>1NF: Alle Attribute sind atomar und enthalten keine wiederholenden Gruppen.</li>
+          <li>2NF: Alle nicht-schlüsselattribute sind voll funktional abhängig vom Primärschlüssel.</li>
+          <li>3NF: Es gibt keine transitive Abhängigkeit zwischen den Attributen.</li>
+        </ul>
+
+
+
+    </section>
+    <br /><br />
+
+
+    <h2 id="objektbeschreibung"> Objektbeschreibung</h2>
+    <br />
+
+    <h3 id="objektbeschreibung-bundesland">Bundesland</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> 5</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Bundesland</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–99
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Bundesland</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-filiale">Filiale</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> 100</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Filiale</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Filiale</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-kasse">Kasse</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> ca. 200</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Kasse</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–9999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Kassennr</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-artikel">Artikel</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> ca. 10.000</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Artikel</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–99999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Bezeichnung</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Preis</strong>
+      • Typ: <code>DECIMAL(10,2)</code>
+      • Länge: 10,2
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-kategorie">Kategorie</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> 10</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Kategorie</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Kategorie</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-lieferant">Lieferant</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> ca. 300</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Lieferant</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–9999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>Lieferantenname</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Strasse</strong>
+      • Typ: <code>VARCHAR(100)</code>
+      • Länge: 100 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>PLZ</strong>
+      • Typ: <code>VARCHAR(10)</code>
+      • Länge: 10 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Stadt</strong>
+      • Typ: <code>VARCHAR(50)</code>
+      • Länge: 50 Zeichen
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    <h3 id="objektbeschreibung-verkauft-beziehung-">Verkauft (Beziehung)</h3>
+    <ul>
+      <li><strong>Anzahl:</strong> mehrere Millionen (Transaktionen)</li>
+    </ul>
+    <h4 id="attribute">Attribute</h4>
+    <p>🔹 <strong>ID-Verkauf</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Wertebereich: 1–999999999
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: ja</p>
+    <p>🔹 <strong>ID-Kasse</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>ID-Artikel</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Menge</strong>
+      • Typ: <code>INT</code>
+      • Länge: 4 Byte
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Preis: <small> entspricht dem Verkaufspreis zum Zeitpunkt des Kaufs (nicht aktueller Artikelpreis).</small></strong>
+      • Typ: <code>DEC</code>
+      • Länge: 9 Byte
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Datum-UTC</strong>
+      • Typ: <code>DATETIME</code>
+      • Länge: -
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <p>🔹 <strong>Datum_local</strong>
+      • Typ: <code>DATETIME</code>
+      • Länge: -
+      • Anzahl Wiederholungen: 0
+      • Definiertheit: 100 %
+      • Identifizierend: nein</p>
+    <hr>
+    
+
+    <h4>Warum ist der Wertebereicht größer als notwendig?</h4>
+    <br />
+    <p><strong>ID-Artikel</strong> wird bei einem Wertebereich von 99.999 festgelegt.
+      <br />
+      Wir haben ca. 10.000 aktive Artikel, aber der Wertebereich ist größer, um zukünftige Erweiterungen zu
+      ermöglichen. (Neue Artikel im Sortiment, die nicht mehr verfügbar sind, werden deaktiviert und behalten ihre
+      ID.)
+      <br /><br />
+      <strong>ID-Kasse</strong> wird bei einem Wertebereich von 9.999 festgelegt, da es in der Regel nicht mehr als
+      200 Kassen pro Filiale gibt, aber auch hier ist der Wertebereich größer für zukünftige Erweiterungen.</p>
+
+    </p>
+    <hr>
+    </section>
+    <br /><br />
+    <section>
+      <h3 id="speicher-berechnen">💾 Speicherberechnung</h3>
+
+      <p>
+        <a target="_blank"
+          href="https://1drv.ms/x/c/41283fdb6be8dd2a/EeN-VEJ4ZspHlsuvDrq7cwcBUrnHKskTxzSENjyT1SfzrA?e=lBbzpP">Link zur
+          Speicherberechnung</a>
+      </p>
+
+      <p><a target="_blank"
+          href="https://www.postgresql.org/docs/current/datatype-numeric.html#DATATYPE-NUMERIC-DECIMAL">Quelle:Postgresql</a>
+      </p>
+
+    </section>
+
+    <section>
+      <h2 id="tabellen"> Erstellung Tabellen</h2>
+    </section>
+    <section>
+      <h2 id="diagram"> DB-Diagramm aus Postgresql</h2>
+    </section>
+    <section>
+      <h2 id="mapping"> Mapping</h2>
+    </section>
+
+
+
+
+    <h3 id="prozessbeschreibungen"> Prozessbeschreibungen</h3>
+    <p><strong>1. Umsatzanalyse über Zeit und Region</strong>
+      <br />
+      <ul>
+        <li> Fragestellung: Wie entwickeln sich Umsätze über Zeit und Region? </li>
+        <li> Häufigkeit: regelmäßig (täglich, monatlich, jährlich) </li>
+        <li> Benötigte Daten: Transaktionen (verkauft), Zeitdimension, Filialen, Regionen, Bundesländer </li>
+        <li> Ziel: Identifikation von saisonalen Mustern, regionalen Trends, Performancevergleichen </li>
+        <li> Datenmenge: hoch </li>
+      </ul>
+    </p>
+    <p><strong>2. Analyse von Preisänderungen auf das Kaufverhalten</strong>
+      <ul>
+        <li> Fragestellung: Wie beeinflussen Preisänderungen das Kaufverhalten? </li>
+        <li> Häufigkeit: anlassbezogen (z. B. nach Preisanpassungen) </li>
+        <li> Benötigte Daten: Artikel, Preisentwicklung (SCD), Verkaufsdaten </li>
+        <li> Ziel: Bewertung der Preissensitivität von Produkten, Ermittlung optimaler Preisstrategien </li>
+        <li> Besonderheit: Historisierung des Artikelpreises erforderlich </li>
+      </ul>
+    </p>
+
+    <p><strong>3. Historisierung von Stammdaten (Slowly Changing Dimensions)</strong>
+      <p>
+        <ul>
+          <li> Fragestellung: Wie ändern sich Stammdaten (Artikelpreis) über die Zeit? </li>
+          <li> Häufigkeit: kontinuierlich bei Änderungen </li>
+          <li> Benötigte Daten: Artikelstammdaten, Änderungszeitpunkte </li>
+          <li> Ziel: Rückverfolgbarkeit von Zuständen über die Zeit, SCD-Typ-2-Umsetzung </li>
+          <li> Datenhaltung: versionierte Dimensionstabellen mit Gültigkeitszeitraum </li>
+        </ul>
+      </p>
+
+      <p><strong>4. Lieferantenanalyse umsatzstarker Produkte</strong>
+        <ul>
+          <li> Fragestellung: Welche Lieferanten liefern umsatzstarke Produkte? </li>
+          <li> Häufigkeit: monatlich/vierteljährlich </li>
+          <li> Benötigte Daten: Artikel, Verkäufe, Zuordnung Artikel–Lieferant </li>
+          <li> Ziel: Identifikation strategisch wichtiger Lieferanten, Verhandlungsgrundlage </li>
+        </ul>
+      </p>
+
+      <p><strong>5. Geografische Verteilung von Lieferanten</strong>
+        <ul>
+          <li> Fragestellung: Wie verteilen sich Lieferanten geografisch? </li>
+          <li> Häufigkeit: bei Bedarf (z. B. Standortoptimierung) </li>
+          <li> Benötigte Daten: Lieferantenadresse (PLZ, Stadt, Bundesland) </li>
+          <li> Ziel: Visualisierung regionaler Schwerpunkte, Analyse logistischer Netzwerke </li>
+        </ul>
+      </p>
+      <br />
+      <p><strong>6. Artikelanzahl pro Lieferant</strong>
+        <br />
+        <ul>
+          <li> Fragestellung: Wer liefert wie viele Artikel? </li>
+          <li> Häufigkeit: regelmäßig zur Bestandsanalyse </li>
+          <li> Benötigte Daten: Artikel, Lieferanten-Zuordnung </li>
+          <li> Ziel: Bewertung der Abhängigkeit von einzelnen Lieferanten, Diversifizierungsstrategien </li>
+        </ul>
+      </p>
+
+      </section>
+
+
+
+
+
+      <br /><br />
+      <section>
+        <h3 id="lessons"> Lessons Learned / Herausforderungen</h3>
+        <p>Was ich sagen wollte...</p>
+        <ul>
+          <li>Sobald Ihr einen Strich macht, fangt die Doku an. Hinterher alles nachzudokumentieren macht kein Spaß und
+            ist aufwändiger als gleich mitzuschreiben.</li>
+
+        </ul>
+      </section>
+      <section>
+        <h2 id="projektstruktur-3-tier-architektur"> Projektstruktur (3-Tier Architektur)</h2>
+        <pre>
+├── README.md               # Projektbeschreibung und Anleitung
+├── docker-compose.yml      # Docker-Umgebung
+├── .env                    # Umgebungsvariablen (z. B. DB-Credentials)
+├── config/
+│   └── settings.yaml       # Konfigurationen für ETL, Pfade etc.
+├── sql/
+│   ├── business_db.sql     # Tabellenstruktur der Business-Datenbank
+│   ├── dwh_schema.sql      # DWH Star Schema (inkl. SCDs)
+│   └── inserts.sql         # Beispieldaten
+├── etl/
+│   ├── extract.py
+│   ├── transform.py
+│   ├── load.py
+│   └── etl_pipeline.py     # ETL orchestriert (optional Airflow DAG)
+├── docs/
+│   ├── ER-Modell.drawio     # ER-Diagramm Business DB
+│   ├── DWH-Modell.drawio    # Star Schema inkl. SCD
+│   └── Datenfluss.png       # Datenflussdiagramm (Quelle → ETL → DWH)
+├── notebooks/
+│   └── exploratory_analysis.ipynb  # EDA / Validierung
+├── tests/
+│   └── test_etl.py         # Unit Tests für ETL-Komponenten
+└── images/
+    └── screenshots.png     # Für Dokumentation / GitHub
+</pre>
+
+        <h1 id="readmemd"> README.md </h1>
+        <ol>
+          <li>Projekttitel </li>
+          <li>Projektbeschreibung </li>
+          <li>Technologiestack (Python, PostgreSQL, Docker etc.)</li>
+          <li>Verzeichnisstruktur (siehe oben)</li>
+          <li>Datenmodell: ER-Diagramm + Star Schema</li>
+          <li>ETL-Pipeline: Beschreibung + Code-Übersicht</li>
+          <li>CDC / SCD-Umsetzung</li>
+          <li>Docker Setup & Deployment</li>
+          <li>Lessons Learned / Herausforderungen</li>
+          <li>Referenzen, Links, Lizenz</li>
+        </ol>
+      </section>
+
+
+  </main>
+
+</body>
+<footer>
+  <p>Quellen: https://dditools.inf.tu-dresden.de/ovk/Informatik/Datenbanken/Logischer_Entwurf/Transformation.html</p>
+  <p class="text-center">© 2025 Isabell Mader | Made with ❤️</p>
+
+</html>
