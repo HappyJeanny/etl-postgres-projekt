@@ -10,7 +10,7 @@
 ## 🐘 PostgreSQL Zugang
 
 - Host: `localhost`
-- Port: `5432`
+- Port: `5436`
 - DB: `etl_db`
 - User: `user`
 - Passwort: `passwort123`
