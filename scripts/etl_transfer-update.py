@@ -130,6 +130,31 @@ def update_dim_filiale_scd2(src_cur, dwh_cur):
             unchanged += 1
     logging.info(f"dim_filiale: {added} neue, {updated} geänderte, {unchanged} unveränderte Datensätze verarbeitet.")
 
+def update_fakt_verkauf(src_cur, dwh_cur, get_id_datum):
+    src_cur.execute("""
+        SELECT 
+            v.id_verkauf, v.id_kasse, v.id_artikel, v.menge, v.preis, 
+            v.preis * v.menge AS umsatz, v.datum_utc, v.datum_local, k.id_filiale
+        FROM verkauft v
+        JOIN kasse k ON v.id_kasse = k.id_kasse
+    """)
+    for row in src_cur.fetchall():
+        datum = row[7].date()
+        id_datum = get_id_datum(datum, dwh_cur)
+        dwh_cur.execute("""
+            INSERT INTO fakt_verkauf (
+                id_verkauf, id_datum, id_kasse, id_filiale, id_artikel, preis, menge, umsatz, Datum_UTC, Datum_Lokal
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """, (
+            row[0], id_datum, row[1], row[8], row[2], row[4], row[3], row[5], row[6], row[7]
+        ))
+
+def get_id_datum(datum, cur):
+    cur.execute("SELECT id_datum FROM dim_datum WHERE datum = %s", (datum,))
+    res = cur.fetchone()
+    return res[0] if res else None
+
 def main():
     # Load .env file
     dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -160,6 +185,7 @@ def main():
     update_dim_artikel_scd2(src_cur, dwh_cur)
     update_dim_filiale_scd2(src_cur, dwh_cur)
     update_dim_scd2(src_cur, dwh_cur, "kasse", "dim_kasse", "id_kasse", ["kassennr", "id_filiale"])
+    update_fakt_verkauf(src_cur, dwh_cur, get_id_datum)
 
     dwh_conn.commit()
     src_cur.close()

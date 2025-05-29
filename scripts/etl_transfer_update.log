@@ -26,3 +26,8 @@
 2025-05-29 16:28:52,811 [INFO] INSERT dim_kasse: id_kasse=7, Werte=(601, 7)
 2025-05-29 16:28:52,811 [INFO] dim_kasse: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
 2025-05-29 16:28:52,819 [INFO] SCD2-Update abgeschlossen.
+2025-05-29 16:43:14,478 [INFO] dim_lieferant: 0 neue, 0 geänderte, 7 unveränderte Datensätze verarbeitet.
+2025-05-29 16:43:14,483 [INFO] dim_artikel: 0 neue, 0 geänderte, 7 unveränderte Datensätze verarbeitet.
+2025-05-29 16:43:14,487 [INFO] dim_filiale: 0 neue, 0 geänderte, 7 unveränderte Datensätze verarbeitet.
+2025-05-29 16:43:14,490 [INFO] dim_kasse: 0 neue, 0 geänderte, 7 unveränderte Datensätze verarbeitet.
+2025-05-29 16:43:14,512 [INFO] SCD2-Update abgeschlossen.
