@@ -30,6 +30,7 @@
 - Prüfen ob File vorhanden `new_demo_data.sql`
 - den Inhalt von `new_demo_data.sql` in der SQL Query etl_db eingeben und ausführen
 - starte `etl_transfer-update.py`
+- Logging in `etl_transfer_update.log`
 
 
 
