@@ -7,13 +7,13 @@
 3. `init_db-docker.py` ausführen
 4. ` ` ausführen
 
-## 🐘 PostgreSQL Zugang
+## 🐘 PostgreSQL Zugang Beispiel:
 
 - Host: `localhost`
 - Port: `5436`
 - DB: `etl_db`
-- User: `user`
-- Passwort: `passwort123`
+- User: `user123`
+- Passwort: `passwort`
 
 ## 📁 Datenstruktur
 
@@ -21,7 +21,7 @@
 -  in pgAdmin die Datenbank: `etl_db_star` anlegen
 - `init_db-docker-star-schema.py`: DWH Datenbank initialisieren (Tabellen anlegen) 
 -  den Inhalt von demo_data.sql in der SQL Query eingeben und ausführen
-- ETL Prozess: xy.py ausführen (Daten werden von der etl_db in die etl_db_star verschoben)
+- ETL Prozess: `etl_transfer.py` ausführen (Daten werden von der etl_db in die etl_db_star verschoben)
 
 ## Update 
 - In Business_db.sql Tabellen neue Werte einfügen. 

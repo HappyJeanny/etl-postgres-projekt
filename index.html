@@ -45,9 +45,8 @@ Datum: 24.05.2025
           <li><a href="#etl"> ETL </a></li>
           <li><a href="#fragen"> Fragestellungen</a></li>
         </ul>
-        <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>
-        <li><a href="#projektstruktur-3-tier-architektur"> Projektstruktur (3-Tier Architektur)</a></li>
-        <li><a href="#readmemd"> README.md</a></li>
+        <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>        
+        <li><a href="readme.md"> README.md</a></li>
 
 
 
@@ -85,7 +84,7 @@ Datum: 24.05.2025
         <li>Wer liefert wie viele Artikel?</li>
       </ul>
 
-      <a href="#prozessbeschreibungen">Siehe auch: Prozessbeschreibungen</a>
+      <a href="#fragen">Siehe auch: Fragestellungen</a>
     </p>
 
     <br /><br /><br />
@@ -176,11 +175,11 @@ Datum: 24.05.2025
           Stadt VARCHAR(50)</li>
         <li>ID-verkauft INT (PK) <br>
           ID-Datum INT (FK) <br>
-          ID_Kasse INT (FK) <br>
-          ID_Filiale INT (FK) <br>
-          ID_Lieferant INT (FK) <br>
+          ID_Kasse INT (FK) (Auswertungen der Kasse) <br>
+          ID_Filiale INT (FK) <br>          
           ID_Artikel INT (FK) <br>
           Menge INT <br>
+          Preis DECIMAL(10,2) (für Auswertungen) <br>
           Umsatz DECIMAL(10,2) <br>
           Datum_UTC DATETIME <br>
           Datum_local DATETIME
@@ -476,6 +475,8 @@ Datum: 24.05.2025
     </div>
     <section>
       <h2 id="mapping"> Mapping</h2>
+      <p>Das Excel File ist im Ordner docs. </p>
+      <a href="docs/MappingQueryLidl.xlsx" target="_blank">Mapping-Excel</a>
     </section>
     <section>
       <h2 id="scd"> Slowly Changing Dimensions (SCD)</h2>
@@ -490,10 +491,27 @@ Datum: 24.05.2025
         hinzugefügt.</p>
 
 
-      <p>Die SCD-Typen werden in der Datenbank wie folgt umgesetzt: Aus Zeitgründen konnte das nicht mehr umgesetzt
-        werden.</p>
-      </p>
+      <p>Die SCD-Typen werden in der Datenbank wie folgt umgesetzt:
+        <br />
+        Datum wird überschrieben, da es sich nicht ändert. <br />
+        <strong>Beispiel:</strong> Wenn der Preis eines Artikels geändert wird, wird der alte Preis in der SCD2-Tabelle
+        gespeichert.</p>
+      <p>Die SCD-Typen werden in den Dimensionstabellen wie folgt umgesetzt:</p>
+      <ul>
+        <li><strong>dim_artikel:</strong> SCD-Typ 2 wird verwendet, um Preisänderungen zu verfolgen. Es werden die
+          Spalten "valid_from" und "valid_to" hinzugefügt, um den Gültigkeitszeitraum des Preises zu speichern.</li>
+        <li><strong>dim_lieferant:</strong> SCD-Typ 2 wird verwendet, um Änderungen an Lieferantendaten zu verfolgen.
+          Es werden die Spalten "valid_from" und "valid_to" hinzugefügt, um den Gültigkeitszeitraum der Lieferantendaten
+          zu speichern.</li>
+        <li><strong>dim_filiale:</strong> SCD-Typ 2 wird verwendet, um Änderungen an Filialdaten zu verfolgen. Es werden
+          die Spalten "valid_from" und "valid_to" hinzugefügt, um den Gültigkeitszeitraum der Filialdaten zu speichern. 
+        </li>
+        <li><strong>dim_kasse:</strong> SCD-Typ 2 wird verwendet, um Änderungen an Kassendaten zu verfolgen. Es werden
+          die Spalten "valid_from" und "valid_to" hinzugefügt, um den Gültigkeitszeitraum der Kassendaten zu speichern.
+        </li>
+      </ul>
     </section>
+    <section>
     <h2 id="etl">ETL-Prozess</h2>
     <p>Der ETL-Prozess (Extract, Transform, Load) beschreibt die Schritte zur Datenintegration in das Data Warehouse.
     </p>
@@ -511,14 +529,14 @@ Datum: 24.05.2025
       <li><strong>Transform:</strong> Transformation der Daten in das Star Schema.</li>
       <li><strong>Load:</strong> Laden der transformierten Daten in das Data Warehouse. (Kein Bestandteil des Projektes)
       </li>
-    </ul>
+    </ul></section>
 
 
 
 
 
 
-
+<section>
     <h3 id="fragen"> Fragestellungen</h3>
     <p><strong>1. Umsatzanalyse über Zeit und Region</strong>
       <br />
@@ -705,48 +723,7 @@ ORDER BY
 
         </ul>
       </section>
-      <section>
-        <h2 id="projektstruktur-3-tier-architektur"> Projektstruktur (3-Tier Architektur)</h2>
-        <pre>
-├── README.md               # Projektbeschreibung und Anleitung
-├── docker-compose.yml      # Docker-Umgebung
-├── .env                    # Umgebungsvariablen (z. B. DB-Credentials)
-├── config/
-│   └── settings.yaml       # Konfigurationen für ETL, Pfade etc.
-├── sql/
-│   ├── business_db.sql     # Tabellenstruktur der Business-Datenbank
-│   ├── dwh_schema.sql      # DWH Star Schema (inkl. SCDs)
-│   └── inserts.sql         # Beispieldaten
-├── etl/
-│   ├── extract.py
-│   ├── transform.py
-│   ├── load.py
-│   └── etl_pipeline.py     # ETL orchestriert (optional Airflow DAG)
-├── docs/
-│   ├── ER-Modell.drawio     # ER-Diagramm Business DB
-│   ├── DWH-Modell.drawio    # Star Schema inkl. SCD
-│   └── Datenfluss.png       # Datenflussdiagramm (Quelle → ETL → DWH)
-├── notebooks/
-│   └── exploratory_analysis.ipynb  # EDA / Validierung
-├── tests/
-│   └── test_etl.py         # Unit Tests für ETL-Komponenten
-└── images/
-    └── screenshots.png     # Für Dokumentation / GitHub
-</pre>
-
-        <h1 id="readmemd"> README.md </h1>
-        <ol>
-          <li>Projekttitel </li>
-          <li>Projektbeschreibung </li>
-          <li>Technologiestack (Python, PostgreSQL, Docker etc.)</li>
-          <li>Verzeichnisstruktur (siehe oben)</li>
-          <li>Datenmodell: ER-Diagramm + Star Schema</li>
-          <li>ETL-Pipeline: Beschreibung + Code-Übersicht</li>
-          <li>SCD-Umsetzung</li>
-          <li>Docker Setup & Deployment</li>
-          <li>Lessons Learned / Herausforderungen</li>
-          <li>Referenzen, Links, Lizenz</li>
-        </ol>
+      <br /><br />       
       </section>
 
 
