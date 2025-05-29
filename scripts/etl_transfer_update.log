@@ -1,0 +1,28 @@
+2025-05-29 16:22:00,066 [INFO] INSERT dim_lieferant: id_lieferant=6, Werte=('Süßwaren GmbH', 'Süßstr. 6', '70173', 'Stuttgart', 'Baden-Württemberg')
+2025-05-29 16:22:00,067 [INFO] INSERT dim_lieferant: id_lieferant=7, Werte=('TK AG', 'Frostweg 7', '30159', 'Hannover', 'Niedersachsen')
+2025-05-29 16:22:00,068 [INFO] dim_lieferant: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:24:39,697 [INFO] INSERT dim_lieferant: id_lieferant=6, Werte=('Süßwaren GmbH', 'Süßstr. 6', '70173', 'Stuttgart', 'Baden-Württemberg')
+2025-05-29 16:24:39,699 [INFO] INSERT dim_lieferant: id_lieferant=7, Werte=('TK AG', 'Frostweg 7', '30159', 'Hannover', 'Niedersachsen')
+2025-05-29 16:24:39,704 [INFO] dim_lieferant: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:24:39,714 [INFO] INSERT dim_artikel: id_artikel=6, Werte=('Schokolade', 'Süßwaren', Decimal('1.49'), 6)
+2025-05-29 16:24:39,715 [INFO] INSERT dim_artikel: id_artikel=7, Werte=('Pizza TK', 'Tiefkühlkost', Decimal('2.99'), 7)
+2025-05-29 16:24:39,715 [INFO] dim_artikel: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:25:50,219 [INFO] INSERT dim_lieferant: id_lieferant=6, Werte=('Süßwaren GmbH', 'Süßstr. 6', '70173', 'Stuttgart', 'Baden-Württemberg')
+2025-05-29 16:25:50,220 [INFO] INSERT dim_lieferant: id_lieferant=7, Werte=('TK AG', 'Frostweg 7', '30159', 'Hannover', 'Niedersachsen')
+2025-05-29 16:25:50,220 [INFO] dim_lieferant: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:25:50,224 [INFO] INSERT dim_artikel: id_artikel=6, Werte=('Schokolade', 'Süßwaren', Decimal('1.49'), 6)
+2025-05-29 16:25:50,225 [INFO] INSERT dim_artikel: id_artikel=7, Werte=('Pizza TK', 'Tiefkühlkost', Decimal('2.99'), 7)
+2025-05-29 16:25:50,225 [INFO] dim_artikel: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:28:52,796 [INFO] INSERT dim_lieferant: id_lieferant=6, Werte=('Süßwaren GmbH', 'Süßstr. 6', '70173', 'Stuttgart', 'Baden-Württemberg')
+2025-05-29 16:28:52,797 [INFO] INSERT dim_lieferant: id_lieferant=7, Werte=('TK AG', 'Frostweg 7', '30159', 'Hannover', 'Niedersachsen')
+2025-05-29 16:28:52,797 [INFO] dim_lieferant: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:28:52,802 [INFO] INSERT dim_artikel: id_artikel=6, Werte=('Schokolade', 'Süßwaren', Decimal('1.49'), 6)
+2025-05-29 16:28:52,803 [INFO] INSERT dim_artikel: id_artikel=7, Werte=('Pizza TK', 'Tiefkühlkost', Decimal('2.99'), 7)
+2025-05-29 16:28:52,803 [INFO] dim_artikel: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:28:52,807 [INFO] INSERT dim_filiale: id_filiale=6, Werte=('Filiale Stuttgart', 'Baden-Württemberg')
+2025-05-29 16:28:52,807 [INFO] INSERT dim_filiale: id_filiale=7, Werte=('Filiale Hannover', 'Niedersachsen')
+2025-05-29 16:28:52,807 [INFO] dim_filiale: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:28:52,810 [INFO] INSERT dim_kasse: id_kasse=6, Werte=(501, 6)
+2025-05-29 16:28:52,811 [INFO] INSERT dim_kasse: id_kasse=7, Werte=(601, 7)
+2025-05-29 16:28:52,811 [INFO] dim_kasse: 2 neue, 0 geänderte, 5 unveränderte Datensätze verarbeitet.
+2025-05-29 16:28:52,819 [INFO] SCD2-Update abgeschlossen.

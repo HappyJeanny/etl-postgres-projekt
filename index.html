@@ -43,7 +43,7 @@ Datum: 24.05.2025
           <li><a href="#mapping"> Mapping </a></li>
           <li><a href="#scd"> SCD </a></li>
           <li><a href="#etl"> ETL </a></li>
-          <li><a href="#prozessbeschreibungen"> Prozessbeschreibungen</a></li>
+          <li><a href="#fragen"> Fragestellungen</a></li>
         </ul>
         <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>
         <li><a href="#projektstruktur-3-tier-architektur"> Projektstruktur (3-Tier Architektur)</a></li>
@@ -175,10 +175,13 @@ Datum: 24.05.2025
           PLZ VARCHAR(10) <br>
           Stadt VARCHAR(50)</li>
         <li>ID-verkauft INT (PK) <br>
+          ID-Datum INT (FK) <br>
           ID_Kasse INT (FK) <br>
+          ID_Filiale INT (FK) <br>
+          ID_Lieferant INT (FK) <br>
           ID_Artikel INT (FK) <br>
           Menge INT <br>
-          Preis DECIMAL(10,2) <br>
+          Umsatz DECIMAL(10,2) <br>
           Datum_UTC DATETIME <br>
           Datum_local DATETIME
         </li>
@@ -462,7 +465,8 @@ Datum: 24.05.2025
     <h2 id="log"> Logisches Schema </h2>
     <p>Das logische Schema des Data Warehouses basiert auf dem Star Schema und umfasst die folgenden Dimensionen und
       Fakten:</p>
-      <div style="max-width: 100%; overflow-x: auto;">
+    <p>Das Feld Preis wird in die Faktentabelle übernommen, um den Einzelpreis pro Verkauf zu analysieren.</p>
+    <div style="max-width: 100%; overflow-x: auto;">
       <img src="docs/Star-Schema.png" alt="mER-Diagram" style="max-width: 100%; height: auto;">
     </div>
 
@@ -482,7 +486,8 @@ Datum: 24.05.2025
       <p> <strong>SCD 0:</strong> Überschreibt den aktuellen Wert ohne Historie zu speichern. Die Zeitdimension ändert
         sich nicht und kann bei Tippfehlern überschrieben werden.<br />
         <strong>SCD 2:</strong> Speichert den aktuellen und den vorherigen Wert, um die Historie zu bewahren. Das wird
-        für die Auswertungen gebraucht. Es werden zusätzliche Spalten "valid_from" und "valid_to" der SCD2 Tabellen hinzugefügt.</p>
+        für die Auswertungen gebraucht. Es werden zusätzliche Spalten "valid_from" und "valid_to" der SCD2 Tabellen
+        hinzugefügt.</p>
 
 
       <p>Die SCD-Typen werden in der Datenbank wie folgt umgesetzt: Aus Zeitgründen konnte das nicht mehr umgesetzt
@@ -514,7 +519,7 @@ Datum: 24.05.2025
 
 
 
-    <h3 id="prozessbeschreibungen"> Prozessbeschreibungen</h3>
+    <h3 id="fragen"> Fragestellungen</h3>
     <p><strong>1. Umsatzanalyse über Zeit und Region</strong>
       <br />
       <ul>
@@ -524,6 +529,23 @@ Datum: 24.05.2025
         <li> Ziel: Identifikation von saisonalen Mustern, regionalen Trends, Performancevergleichen </li>
         <li> Datenmenge: hoch </li>
       </ul>
+      <pre><code>
+        SELECT
+        d.jahr,
+        d.monat,
+        f.bundesland,
+        SUM(fv.umsatz) AS gesamt_umsatz
+        FROM
+        fakt_verkauf fv
+        JOIN
+        dim_datum d ON fv.id_datum = d.id_datum
+        JOIN
+        dim_filiale f ON fv.id_filiale = f.id_filiale
+        GROUP BY
+        d.jahr, d.monat, f.bundesland
+        ORDER BY
+        d.jahr, d.monat, f.bundesland;
+      </code> </pre>
     </p>
     <p><strong>2. Analyse von Preisänderungen auf das Kaufverhalten</strong>
       <ul>
@@ -534,6 +556,28 @@ Datum: 24.05.2025
         <li> Besonderheit: Historisierung des Artikelpreises erforderlich </li>
       </ul>
     </p>
+    <pre><code>
+    SELECT
+    a.bezeichnung,
+    f.preis AS verkaufspreis,
+    d.jahr,
+    d.monat,
+    SUM(f.menge) AS verkaufte_menge,
+    SUM(f.umsatz) AS umsatz
+FROM
+    fakt_verkauf f
+JOIN
+    dim_artikel a ON f.id_artikel = a.id_artikel
+JOIN
+    dim_datum d ON f.id_datum = d.id_datum
+WHERE
+    f.preis = a.preis
+    AND f.Datum_Lokal BETWEEN a.valid_from AND COALESCE(a.valid_to, f.Datum_Lokal)
+GROUP BY
+    a.bezeichnung, f.preis, d.jahr, d.monat
+ORDER BY
+    a.bezeichnung, d.jahr, d.monat, f.preis;
+    </code></pre>
 
     <p><strong>3. Historisierung von Stammdaten (Slowly Changing Dimensions)</strong>
       <p>
@@ -545,6 +589,30 @@ Datum: 24.05.2025
           <li> Datenhaltung: versionierte Dimensionstabellen mit Gültigkeitszeitraum </li>
         </ul>
       </p>
+      <pre><code>
+SELECT
+    a.bezeichnung,
+    f.preis AS verkaufspreis,
+    d.jahr,
+    d.monat,
+    SUM(f.menge) AS verkaufte_menge,
+    SUM(f.umsatz) AS umsatz
+FROM
+    fakt_verkauf f
+JOIN
+    dim_artikel a ON f.id_artikel = a.id_artikel
+JOIN
+    dim_datum d ON f.id_datum = d.id_datum
+WHERE
+    f.preis = a.preis
+    AND f.Datum_Lokal BETWEEN a.valid_from AND COALESCE(a.valid_to, f.Datum_Lokal)
+GROUP BY
+    a.bezeichnung, f.preis, d.jahr, d.monat
+ORDER BY
+    a.bezeichnung, d.jahr, d.monat, f.preis;
+
+
+      </code>      </pre>
 
       <p><strong>4. Lieferantenanalyse umsatzstarker Produkte</strong>
         <ul>
@@ -554,6 +622,24 @@ Datum: 24.05.2025
           <li> Ziel: Identifikation strategisch wichtiger Lieferanten, Verhandlungsgrundlage </li>
         </ul>
       </p>
+      <pre><code>
+SELECT
+    l.lieferantenname,
+    SUM(fv.umsatz) AS gesamt_umsatz,
+    COUNT(DISTINCT fv.id_artikel) AS anzahl_artikel
+FROM
+    fakt_verkauf fv
+JOIN
+    dim_artikel a ON fv.id_artikel = a.id_artikel
+JOIN
+    dim_lieferant l ON a.id_lieferant = l.id_lieferant
+GROUP BY
+    l.lieferantenname
+ORDER BY
+    gesamt_umsatz DESC;
+
+
+      </code></pre>
 
       <p><strong>5. Geografische Verteilung von Lieferanten</strong>
         <ul>
@@ -563,6 +649,19 @@ Datum: 24.05.2025
           <li> Ziel: Visualisierung regionaler Schwerpunkte, Analyse logistischer Netzwerke </li>
         </ul>
       </p>
+      <pre><code>
+SELECT
+    bundesland,
+    stadt,
+    plz,
+    COUNT(*) AS anzahl_lieferanten
+FROM
+    dim_lieferant
+GROUP BY
+    bundesland, stadt, plz
+ORDER BY
+    bundesland, stadt, plz;
+      </code></pre>
       <br />
       <p><strong>6. Artikelanzahl pro Lieferant</strong>
         <br />
@@ -573,6 +672,20 @@ Datum: 24.05.2025
           <li> Ziel: Bewertung der Abhängigkeit von einzelnen Lieferanten, Diversifizierungsstrategien </li>
         </ul>
       </p>
+      <pre><code>
+SELECT
+    l.lieferantenname,
+    COUNT(a.id_artikel) AS anzahl_artikel
+FROM
+    dim_lieferant l
+JOIN
+    dim_artikel a ON a.id_lieferant = l.id_lieferant
+GROUP BY
+    l.lieferantenname
+ORDER BY
+    anzahl_artikel DESC;
+
+      </code></pre>
 
       </section>
 

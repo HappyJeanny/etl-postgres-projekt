@@ -23,7 +23,17 @@
 -  den Inhalt von demo_data.sql in der SQL Query eingeben und ausführen
 - ETL Prozess: xy.py ausführen (Daten werden von der etl_db in die etl_db_star verschoben)
 
+## Update 
+- In Business_db.sql Tabellen neue Werte einfügen. 
+- Dazu erzeugt Update-Tables.py ein File "new_demo_data.sql" mit neuen Daten
+- `Update-Tables.py`
+- Prüfen ob File vorhanden `new_demo_data.sql`
+- den Inhalt von `new_demo_data.sql` in der SQL Query etl_db eingeben und ausführen
+- starte `etl_transfer-update.py`
 
+
+
+Test von einem alten Projekt, kann ignoriert werden.
 `data/kunden.csv`: Rohdaten
 - `data/kunden_bereinigt.csv`: bereinigte Daten
 

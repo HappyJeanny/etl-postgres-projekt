@@ -3,9 +3,21 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-# .env laden
+now = datetime.now().date()  # oder datetime.now() für Timestamp
+
+
+# Load .env file
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-load_dotenv(dotenv_path)
+if not os.path.exists(dotenv_path):
+    raise FileNotFoundError(f"The .env file was not found at the expected path: {dotenv_path}")
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path, encoding='utf-8')
+
+# Überprüfen, ob alle benötigten Umgebungsvariablen gesetzt sind
+required_vars = ["DB_NAME", "DB_NAME_STAR", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT"]
+for var in required_vars:
+    if not os.getenv(var):
+        raise ValueError(f"Missing required environment variable: {var}")
 
 # Verbindungsdaten
 SRC_DB = os.getenv("DB_NAME")         # business_db
@@ -16,9 +28,14 @@ HOST = os.getenv("DB_HOST")
 PORT = os.getenv("DB_PORT")
 
 # Verbindungen aufbauen
-src_conn = psycopg2.connect(
+def new_func(SRC_DB, USER, PW, HOST, PORT):
+    src_conn = psycopg2.connect(
     dbname=SRC_DB, user=USER, password=PW, host=HOST, port=PORT
 )
+    
+    return src_conn
+
+src_conn = new_func(SRC_DB, USER, PW, HOST, PORT)
 dwh_conn = psycopg2.connect(
     dbname=DWH_DB, user=USER, password=PW, host=HOST, port=PORT
 )
@@ -27,24 +44,37 @@ dwh_cur = dwh_conn.cursor()
 
 # --- Dimensionen befüllen ---
 
-# dim_bundesland
-src_cur.execute("SELECT id_bundesland, bundesland FROM bundesland")
-for row in src_cur.fetchall():
-    dwh_cur.execute(
-        "INSERT INTO dim_bundesland (id_bundesland, bundesland) VALUES (%s, %s) ON CONFLICT DO NOTHING", row
-    )
-
-# dim_filiale
+#dim_filiale
 src_cur.execute("""
-    SELECT f.id_filiale, f.filiale, b.bundesland
+    SELECT f.id_filiale, f.filiale, b.bundesland 
     FROM filiale f
     JOIN bundesland b ON f.id_bundesland = b.id_bundesland
 """)
 for row in src_cur.fetchall():
     dwh_cur.execute(
-        "INSERT INTO dim_filiale (id_filiale, filiale, bundesland) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING", row
+        "INSERT INTO dim_filiale (id_filiale, filiale, bundesland, valid_from, valid_to) VALUES (%s, %s, %s, %s, NULL) ON CONFLICT DO NOTHING",
+        (row[0], row[1], row[2], now)
     )
 
+
+
+
+# dim_kasse
+src_cur.execute("""
+    SELECT id_kasse, kassennr, id_filiale
+    FROM kasse
+""")
+for row in src_cur.fetchall():
+    dwh_cur.execute(
+        "INSERT INTO dim_kasse (id_kasse, kassennr, id_filiale, valid_from, valid_to) VALUES (%s, %s, %s, %s, NULL) ON CONFLICT DO NOTHING",
+        (row[0], row[1], row[2], now)
+    )
+
+
+
+
+
+# dim_lieferant
 # dim_lieferant
 src_cur.execute("""
     SELECT id_lieferant, lieferantenname, strasse, plz, stadt, bundesland
@@ -52,26 +82,25 @@ src_cur.execute("""
 """)
 for row in src_cur.fetchall():
     dwh_cur.execute(
-        "INSERT INTO dim_lieferant (id_lieferant, lieferantenname, strasse, plz, stadt, bundesland) VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING", row
+        "INSERT INTO dim_lieferant (id_lieferant, lieferantenname, strasse, plz, stadt, bundesland, valid_from, valid_to) VALUES (%s, %s, %s, %s, %s, %s, %s, NULL) ON CONFLICT DO NOTHING",
+        (row[0], row[1], row[2], row[3], row[4], row[5], now)
     )
 
-# dim_kategorie
-src_cur.execute("SELECT id_kategorie, kategorie FROM kategorie")
-for row in src_cur.fetchall():
-    dwh_cur.execute(
-        "INSERT INTO dim_kategorie (id_kategorie, kategorie) VALUES (%s, %s) ON CONFLICT DO NOTHING", row
-    )
+
 
 # dim_artikel
+# dim_artikel
 src_cur.execute("""
-    SELECT a.id_artikel, a.bezeichnung, k.kategorie
+    SELECT a.id_artikel, a.bezeichnung, k.kategorie, a.preis, a.id_lieferant
     FROM artikel a
     JOIN kategorie k ON a.id_kategorie = k.id_kategorie
 """)
 for row in src_cur.fetchall():
     dwh_cur.execute(
-        "INSERT INTO dim_artikel (id_artikel, bezeichnung, kategorie) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING", row
+        "INSERT INTO dim_artikel (id_artikel, bezeichnung, kategorie, preis, id_lieferant, valid_from, valid_to) VALUES (%s, %s, %s, %s, %s, %s, NULL) ON CONFLICT DO NOTHING",
+        (row[0], row[1], row[2], row[3], row[4], now)
     )
+
 
 # dim_datum (aus verkauft generieren, falls nicht vorhanden)
 src_cur.execute("SELECT DISTINCT datum_local FROM verkauft")
@@ -95,25 +124,47 @@ def get_id_datum(datum, cur):
     res = cur.fetchone()
     return res[0] if res else None
 
-# --- Faktentabelle befüllen ---
+# Faktentabelle: Verkäufe
 src_cur.execute("""
-    SELECT v.id_verkauf, v.id_kasse, v.id_artikel, v.menge, v.preis, v.datum_local,
-           a.id_lieferant, k.id_filiale
+    SELECT 
+        v.id_verkauf, 
+        v.id_kasse, 
+        v.id_artikel, 
+        v.menge, 
+        v.preis, 
+        v.preis * v.menge AS umsatz, 
+        v.datum_utc, 
+        v.datum_local,
+        k.id_filiale
     FROM verkauft v
     JOIN artikel a ON v.id_artikel = a.id_artikel
     JOIN kasse k ON v.id_kasse = k.id_kasse
+    
 """)
 for row in src_cur.fetchall():
-    id_verkauf, id_kasse, id_artikel, menge, preis, datum_local, id_lieferant, id_filiale = row
-    umsatz = preis * menge
-    datum = datum_local.date()
+    # Hole das Datum für die Zeitdimension
+    datum = row[7].date()  # row[7] = datum_local
     id_datum = get_id_datum(datum, dwh_cur)
     dwh_cur.execute("""
-        INSERT INTO fakt_verkauf
-        (id_verkauf, id_datum, id_kasse, id_filiale, id_lieferant, id_artikel, menge, umsatz)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO fakt_verkauf (
+            id_verkauf, id_datum, id_kasse, id_filiale, id_artikel, preis, menge, umsatz, Datum_UTC, Datum_Lokal
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT DO NOTHING
-    """, (id_verkauf, id_datum, id_kasse, id_filiale, id_lieferant, id_artikel, menge, umsatz))
+    """, (
+        row[0],                # id_verkauf
+        id_datum,              # id_datum (aus dim_datum)
+        row[1],                # id_kasse
+        row[8],                # id_filiale 
+        row[2],                # id_artikel
+        row[4],                # preis
+        row[3],                # menge
+        row[5],                # umsatz
+        row[6],                # Datum_UTC
+        row[7]                 # Datum_Lokal
+    ))
+
+
+
 
 # Commit und Verbindungen schließen
 dwh_conn.commit()
