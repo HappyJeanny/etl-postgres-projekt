@@ -43,7 +43,10 @@ Datum: 24.05.2025
           <li><a href="#mapping"> Mapping </a></li>
           <li><a href="#scd"> SCD </a></li>
           <li><a href="#etl"> ETL </a></li>
+          <li><a href="#scripts"> Scripts </a></li>
+          <li><a href="#sql"> SQL-Abfragen</a></li>
           <li><a href="#fragen"> Fragestellungen</a></li>
+          
         </ul>
         <li><a href="#lessons"> Lessons Learned/Herausforderungen</a></li>        
         <li><a href="readme.md"> README.md</a></li>
@@ -514,6 +517,10 @@ Datum: 24.05.2025
     <section>
     <h2 id="etl">ETL-Prozess</h2>
     <p>Der ETL-Prozess (Extract, Transform, Load) beschreibt die Schritte zur Datenintegration in das Data Warehouse.
+      <br />
+      <a href="docs/MappingQueryLidl.xlsx" target="_blank">Mapping Tabelle</a>
+      <br />
+      <a href="README.md" target="_blank">Beschreibung wie der ETL-Prozess abläuft.</a>
     </p>
     <p>Der ETL-Prozess umfasst die folgenden Schritte:</p>
     <ul>
@@ -523,13 +530,20 @@ Datum: 24.05.2025
     </ul>
     <p>Der ETL-Prozess wird in Python implementiert. <strong>Nicht Bestandteil des Projektes:</strong> Orchestrierung
       mit Tools wie Apache Airflow oder Luigi! </p>
-    <p>Die ETL-Pipeline besteht aus den folgenden Komponenten:</p>
-    <ul>
-      <li><strong>Extract:</strong> Extraktion der Daten aus der Business-Datenbank.</li>
-      <li><strong>Transform:</strong> Transformation der Daten in das Star Schema.</li>
-      <li><strong>Load:</strong> Laden der transformierten Daten in das Data Warehouse. (Kein Bestandteil des Projektes)
-      </li>
-    </ul></section>
+    <p>
+      <br />      
+    </p>
+   </section>
+   <section>
+    <h2 id="scripts">Scripts</h2>
+    <p>Die Scripts für den ETL-Prozess sind im Ordner <a href="scripts/" target="_blank">scripts</a> zu finden.</p>
+
+   </section>
+    <section>
+      <h2 id="sql">SQL-Abfragen</h2>
+      <p>Die SQL-Abfragen für die verschiedenen Fragestellungen sind im Ordner <a href="sql/" target="_blank">sql</a> zu
+        finden.</p>
+    </section>
 
 
 

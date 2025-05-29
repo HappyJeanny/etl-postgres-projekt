@@ -15,10 +15,10 @@
 - User: `user123`
 - Passwort: `passwort`
 
-## 📁 Datenstruktur
-
-- `init_db-docker.py`: Business-Datenbank initialisieren (Tabellen anlegen) 
--  in pgAdmin die Datenbank: `etl_db_star` anlegen
+## Schritt für Schritt Anleitung:
+- Alle Tabellen löschen, falls vorhanden
+- `init_db-docker.py` ausführen: Business-Datenbank initialisieren (Tabellen anlegen) 
+-  in pgAdmin manuell die Datenbank: `etl_db_star` anlegen
 - `init_db-docker-star-schema.py`: DWH Datenbank initialisieren (Tabellen anlegen) 
 -  den Inhalt von demo_data.sql in der SQL Query eingeben und ausführen
 - ETL Prozess: `etl_transfer.py` ausführen (Daten werden von der etl_db in die etl_db_star verschoben)
